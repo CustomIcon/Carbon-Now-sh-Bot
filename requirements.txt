@@ -1,0 +1,4 @@
+pyrogram==1.1.10
+pyromod
+pykeyboard
+carbonnow

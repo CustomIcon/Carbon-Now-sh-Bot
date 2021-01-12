@@ -3,8 +3,10 @@ from pyrogram import Client
 from pyrogram import filters
 from pyrogram.types import Message
 from pyrogram.types import InlineKeyboardButton
+from pyrogram.types import KeyboardButton
 from pyrogram.types import ForceReply
 from pykeyboard import InlineKeyboard
+from pykeyboard import ReplyKeyboard
 from pyromod import listen
 import re
 from config import Config
@@ -73,7 +75,6 @@ button_create = filters.create(button_callback)
 
 @bot.on_callback_query(button_create)
 async def theme_button(_, query):
-    print(query)
     keyboard = InlineKeyboard(row_width=4)
     keyboard.add(
         InlineKeyboardButton("Red", "color_#FF0000"),
@@ -117,7 +118,26 @@ color_create = filters.create(color_callback)
 @bot.on_callback_query(color_create)
 async def color_button(client, query):
     await query.message.delete()
+    keyboard = ReplyKeyboard(row_width=1)
+    keyboard.add(
+        KeyboardButton('Yes'),
+        KeyboardButton('No'),
+    )
+    watermarker = await client.ask(
+        query.message.chat.id,
+        "Would you like to have a WaterMark on the carbonized code?",
+        reply_markup=keyboard
+    )
     color[str(query.from_user.id) + "color"] = query.data.split("_")[1]
+    if watermarker.text.lower() == "no":
+        watermark = False
+    elif watermarker.text.lower() == "yes":
+        watermark = True
+    else:
+        await query.message.reply(
+            "Can't get that, I assume you said no"
+        )
+        watermark = False
     final = await client.ask(
             query.message.chat.id,
             "Okay, Now send me the Code to parse on carbon.now.sh",
@@ -132,8 +152,8 @@ async def color_button(client, query):
         drop_shadow_blur='68px',
         drop_shadow_offset='20px',
         font_family='Fira Code',
-        window_theme="none",
         width_adjustment=True,
+        watermark=watermark,
     )
     await query.message.reply_chat_action(
         "upload_photo"
